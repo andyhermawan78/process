@@ -1,0 +1,6 @@
+{
+  "name": "Build the Process - Classroom Relay Game",
+  "description": "An interactive smartboard relay game for Grade 10 English students to practice sequencing words, passive voice, and nominalization in process descriptions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

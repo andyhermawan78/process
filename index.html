@@ -1,0 +1,2059 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Build the Process - Classroom Relay Game</title>
+    <meta name="description" content="An interactive smartboard relay game for Grade 10 English students to practice sequencing words, passive voice, and nominalization in process descriptions." />
+    <meta property="og:title" content="Build the Process - Classroom Relay Game" />
+    <meta property="og:description" content="An interactive smartboard relay game for Grade 10 English students to practice sequencing words, passive voice, and nominalization in process descriptions." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <style>
+      :root {
+        --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        --bg-main: #0b1120;
+        --surface: #1e293b;
+        --surface-hover: #273549;
+        --surface-border: #334155;
+        --text-primary: #f8fafc;
+        --text-secondary: #94a3b8;
+        --accent-cyan: #38bdf8;
+        --accent-amber: #fbbf24;
+        --team-blue: #3b82f6;
+        --team-orange: #f97316;
+        --team-green: #10b981;
+        --team-purple: #a855f7;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      body {
+        font-family: var(--font-sans);
+        background-color: var(--bg-main);
+        color: var(--text-primary);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden;
+      }
+
+      /* Screen transitions */
+      .screen {
+        display: none;
+        width: 100%;
+        max-width: 1560px;
+        margin: 0 auto;
+        padding: 1.5rem;
+        flex: 1;
+        flex-direction: column;
+      }
+
+      .screen.active {
+        display: flex;
+        animation: fadeIn 0.25s ease-out;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      @keyframes slideInUp {
+        from { opacity: 0; transform: translateY(14px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      /* Buttons & interactive touch targets */
+      button, .btn {
+        font-family: inherit;
+        font-size: 1.05rem;
+        font-weight: 700;
+        cursor: pointer;
+        padding: 0.8rem 1.5rem;
+        border-radius: 12px;
+        border: 2px solid transparent;
+        transition: all 0.15s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        touch-action: manipulation;
+        min-height: 48px;
+        text-decoration: none;
+      }
+
+      button:active {
+        transform: scale(0.97);
+      }
+
+      .btn-primary {
+        background: #2563eb;
+        color: white;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+      }
+      .btn-primary:hover {
+        background: #1d4ed8;
+      }
+
+      .btn-secondary {
+        background: #1e293b;
+        color: #f1f5f9;
+        border-color: #475569;
+      }
+      .btn-secondary:hover {
+        background: #334155;
+        border-color: #64748b;
+      }
+
+      .btn-emerald {
+        background: #059669;
+        color: white;
+        box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
+      }
+      .btn-emerald:hover {
+        background: #047857;
+      }
+
+      .btn-danger {
+        background: #dc2626;
+        color: white;
+      }
+      .btn-danger:hover {
+        background: #b91c1c;
+      }
+
+      .btn-sm {
+        padding: 0.45rem 0.9rem;
+        font-size: 0.9rem;
+        min-height: 38px;
+        border-radius: 8px;
+      }
+
+      .btn-lg {
+        padding: 1rem 2.2rem;
+        font-size: 1.3rem;
+        border-radius: 14px;
+      }
+
+      /* Top Bar */
+      header.top-bar {
+        background: #0f172a;
+        border-bottom: 2px solid #1e293b;
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        z-index: 50;
+      }
+
+      .header-title-group {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        cursor: pointer;
+      }
+
+      .header-title-group h1 {
+        font-size: 1.45rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .header-badge {
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 0.2rem 0.55rem;
+        border-radius: 6px;
+        background: rgba(56, 189, 248, 0.15);
+        color: #38bdf8;
+        border: 1px solid rgba(56, 189, 248, 0.3);
+      }
+
+      .top-metrics {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .timer-display {
+        background: #030712;
+        border: 2px solid #334155;
+        padding: 0.35rem 0.9rem;
+        border-radius: 10px;
+        font-family: monospace;
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: #38bdf8;
+        letter-spacing: 0.05em;
+        display: none;
+      }
+
+      /* ========================================================
+         HOME SCREEN
+         ======================================================== */
+      .home-hero {
+        background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+        border: 2px solid var(--surface-border);
+        border-radius: 24px;
+        padding: 3rem 2.5rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 16px 36px rgba(0,0,0,0.4);
+      }
+
+      .home-hero-content {
+        max-width: 860px;
+      }
+
+      .hero-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.35rem 0.85rem;
+        border-radius: 20px;
+        background: rgba(56, 189, 248, 0.12);
+        border: 1px solid rgba(56, 189, 248, 0.3);
+        color: #38bdf8;
+        font-size: 0.9rem;
+        font-weight: 700;
+        margin-bottom: 1.2rem;
+      }
+
+      .home-hero h2 {
+        font-size: 3rem;
+        font-weight: 900;
+        line-height: 1.15;
+        letter-spacing: -0.03em;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #ffffff 60%, #94a3b8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .home-hero p {
+        font-size: 1.25rem;
+        line-height: 1.6;
+        color: #cbd5e1;
+        margin-bottom: 2rem;
+      }
+
+      .hero-action-row {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      /* Home Features Grid */
+      .features-section-title {
+        font-size: 1.5rem;
+        font-weight: 800;
+        margin-bottom: 1.2rem;
+        color: #f8fafc;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+
+      .home-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1.4rem;
+        margin-bottom: 2.5rem;
+      }
+
+      .feature-card {
+        background: var(--surface);
+        border: 2px solid var(--surface-border);
+        border-radius: 18px;
+        padding: 1.6rem;
+        transition: transform 0.2s ease, border-color 0.2s ease;
+      }
+
+      .feature-card:hover {
+        transform: translateY(-3px);
+        border-color: #475569;
+      }
+
+      .feature-icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .feature-card h3 {
+        font-size: 1.25rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        color: #f1f5f9;
+      }
+
+      .feature-card p {
+        font-size: 0.98rem;
+        color: #94a3b8;
+        line-height: 1.5;
+      }
+
+      /* Interactive Topic Preview Section on Home */
+      .topic-preview-container {
+        background: #111827;
+        border: 2px solid var(--surface-border);
+        border-radius: 20px;
+        padding: 1.8rem;
+        margin-bottom: 2.5rem;
+      }
+
+      .topics-selector-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 0.8rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .topic-tab-btn {
+        background: #1e293b;
+        border: 2px solid #334155;
+        border-radius: 12px;
+        padding: 0.8rem 1rem;
+        color: #cbd5e1;
+        font-weight: 700;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .topic-tab-btn.active {
+        background: rgba(56, 189, 248, 0.15);
+        border-color: #38bdf8;
+        color: white;
+      }
+
+      .topic-detail-card {
+        background: #0b1120;
+        border: 1px solid #334155;
+        border-radius: 14px;
+        padding: 1.5rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+      }
+
+      .topic-detail-block h4 {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #38bdf8;
+        margin-bottom: 0.4rem;
+        font-weight: 800;
+      }
+
+      .topic-detail-block p {
+        font-size: 0.95rem;
+        color: #cbd5e1;
+        line-height: 1.5;
+      }
+
+      /* Quick Rules Banner */
+      .rules-banner {
+        background: #0f172a;
+        border: 2px dashed #334155;
+        border-radius: 16px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+      }
+
+      /* ========================================================
+         SCREEN 1: SETUP
+         ======================================================== */
+      .setup-container {
+        max-width: 980px;
+        margin: 1rem auto;
+        background: var(--surface);
+        border: 2px solid var(--surface-border);
+        border-radius: 20px;
+        padding: 2.2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      }
+
+      .setup-top-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+      }
+
+      .setup-hero {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      .setup-hero h2 {
+        font-size: 2.3rem;
+        font-weight: 900;
+        color: #f8fafc;
+        margin-bottom: 0.5rem;
+      }
+
+      .setup-hero p {
+        font-size: 1.15rem;
+        color: #94a3b8;
+      }
+
+      .rules-card {
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 14px;
+        padding: 1.2rem;
+        margin-bottom: 2rem;
+      }
+
+      .rules-card h3 {
+        font-size: 1rem;
+        color: #38bdf8;
+        margin-bottom: 0.6rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .rules-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 0.75rem;
+        font-size: 0.95rem;
+        color: #cbd5e1;
+        list-style: none;
+      }
+
+      .rules-list li {
+        display: flex;
+        gap: 0.5rem;
+        align-items: flex-start;
+      }
+
+      .team-count-picker {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #0f172a;
+        padding: 0.8rem 1.2rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      .team-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.2rem;
+        margin-bottom: 2rem;
+      }
+
+      .team-config-card {
+        background: #0f172a;
+        border-radius: 14px;
+        padding: 1.2rem;
+        border: 2px solid;
+      }
+
+      .team-config-card.team-0 { border-color: var(--team-blue); }
+      .team-config-card.team-1 { border-color: var(--team-orange); }
+      .team-config-card.team-2 { border-color: var(--team-green); }
+      .team-config-card.team-3 { border-color: var(--team-purple); }
+
+      .input-label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 0.4rem;
+        color: #94a3b8;
+      }
+
+      input[type="text"], select, textarea {
+        width: 100%;
+        background: #1e293b;
+        border: 2px solid #475569;
+        border-radius: 10px;
+        color: white;
+        font-family: inherit;
+        font-size: 1.05rem;
+        padding: 0.75rem 1rem;
+        outline: none;
+        transition: border-color 0.15s;
+        user-select: text;
+      }
+
+      input[type="text"]:focus, select:focus, textarea:focus {
+        border-color: #38bdf8;
+      }
+
+      /* ========================================================
+         SCREEN 2: GAME BOARD
+         ======================================================== */
+      .game-board {
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+        flex: 1;
+      }
+
+      .columns-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.2rem;
+        flex: 1;
+        min-height: 400px;
+      }
+
+      .team-column {
+        background: var(--surface);
+        border: 3px solid var(--surface-border);
+        border-radius: 16px;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.25s ease;
+      }
+
+      .team-column.active-turn {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 28px rgba(0,0,0,0.5);
+      }
+
+      .team-column.team-0.active-turn {
+        border-color: var(--team-blue);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4);
+      }
+      .team-column.team-1.active-turn {
+        border-color: var(--team-orange);
+        box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.4);
+      }
+      .team-column.team-2.active-turn {
+        border-color: var(--team-green);
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.4);
+      }
+      .team-column.team-3.active-turn {
+        border-color: var(--team-purple);
+        box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.4);
+      }
+
+      .team-column-header {
+        padding: 1rem 1.2rem;
+        border-bottom: 2px solid #334155;
+        background: rgba(0,0,0,0.25);
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+
+      .team-name-badge {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .team-title {
+        font-size: 1.3rem;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+      }
+
+      .turn-tag {
+        font-size: 0.8rem;
+        font-weight: 800;
+        padding: 0.25rem 0.65rem;
+        border-radius: 6px;
+        background: #334155;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .active-turn .turn-tag {
+        background: #fbbf24;
+        color: #78350f;
+        animation: pulseTurn 1.2s infinite;
+      }
+
+      @keyframes pulseTurn {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.85; transform: scale(1.05); }
+      }
+
+      .process-topic-badge {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #cbd5e1;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      .steps-progress {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.2rem;
+      }
+
+      .progress-bars-row {
+        display: flex;
+        gap: 4px;
+        flex: 1;
+      }
+
+      .step-dot {
+        height: 8px;
+        flex: 1;
+        background: #334155;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+      }
+
+      .team-column.team-0 .step-dot.filled { background: var(--team-blue); }
+      .team-column.team-1 .step-dot.filled { background: var(--team-orange); }
+      .team-column.team-2 .step-dot.filled { background: var(--team-green); }
+      .team-column.team-3 .step-dot.filled { background: var(--team-purple); }
+
+      .requirements-indicator {
+        font-size: 0.8rem;
+        display: flex;
+        justify-content: space-between;
+        color: #94a3b8;
+        padding-top: 0.3rem;
+      }
+
+      .steps-scroll-area {
+        flex: 1;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        overflow-y: auto;
+        max-height: 480px;
+      }
+
+      .step-item {
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 10px;
+        padding: 0.85rem;
+        font-size: 1.05rem;
+        line-height: 1.45;
+        animation: slideInUp 0.25s ease-out;
+        position: relative;
+      }
+
+      .step-item-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.4rem;
+        font-size: 0.75rem;
+        color: #94a3b8;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .step-seq-word {
+        color: #38bdf8;
+        font-weight: 700;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+
+      .voice-tag {
+        font-size: 0.7rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+        font-weight: 700;
+      }
+      .voice-passive { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+      .voice-active { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+
+      .empty-steps-prompt {
+        color: #64748b;
+        text-align: center;
+        font-style: italic;
+        margin: auto;
+        padding: 1.5rem;
+      }
+
+      /* Control / Input dock */
+      .bottom-dock {
+        background: #111827;
+        border: 2px solid #334155;
+        border-radius: 18px;
+        padding: 1.25rem 1.5rem;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+      }
+
+      .dock-turn-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.75rem;
+      }
+
+      .turn-callout {
+        font-size: 1.3rem;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+
+      .dock-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .input-wrapper {
+        display: flex;
+        gap: 0.75rem;
+        align-items: stretch;
+      }
+
+      .input-wrapper textarea {
+        flex: 1;
+        min-height: 72px;
+        resize: none;
+        font-size: 1.2rem;
+        line-height: 1.4;
+      }
+
+      .dock-submit-btn {
+        min-width: 170px;
+        font-size: 1.25rem;
+      }
+
+      .feedback-box {
+        margin-top: 0.75rem;
+        padding: 0.85rem 1.2rem;
+        border-radius: 10px;
+        font-size: 1.05rem;
+        font-weight: 600;
+        display: none;
+        animation: fadeIn 0.2s ease-out;
+      }
+
+      .feedback-box.error {
+        display: block;
+        background: rgba(220, 38, 38, 0.18);
+        border: 2px solid #ef4444;
+        color: #fca5a5;
+      }
+
+      .feedback-box.success {
+        display: block;
+        background: rgba(16, 185, 129, 0.18);
+        border: 2px solid #10b981;
+        color: #6ee7b7;
+      }
+
+      .quick-chips-row {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        margin-top: 0.6rem;
+        align-items: center;
+      }
+
+      .chip-label {
+        font-size: 0.8rem;
+        color: #94a3b8;
+        font-weight: 700;
+        margin-right: 0.2rem;
+      }
+
+      .word-chip {
+        background: #1e293b;
+        color: #cbd5e1;
+        border: 1px solid #475569;
+        border-radius: 6px;
+        padding: 0.25rem 0.6rem;
+        font-size: 0.85rem;
+        cursor: pointer;
+      }
+
+      .word-chip:hover {
+        background: #334155;
+        color: white;
+      }
+
+      /* ========================================================
+         SCREEN 3: WINNER / END SCREEN
+         ======================================================== */
+      .winner-container {
+        max-width: 1000px;
+        margin: 2rem auto;
+        text-align: center;
+        background: var(--surface);
+        border: 2px solid #475569;
+        border-radius: 24px;
+        padding: 3rem 2rem;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+        position: relative;
+      }
+
+      .trophy-icon {
+        font-size: 4rem;
+        margin-bottom: 0.5rem;
+        display: inline-block;
+        animation: trophyBounce 1.5s ease-in-out infinite alternate;
+      }
+
+      @keyframes trophyBounce {
+        from { transform: translateY(0); }
+        to { transform: translateY(-10px); }
+      }
+
+      .winner-headline {
+        font-size: 2.8rem;
+        font-weight: 900;
+        margin-bottom: 0.5rem;
+      }
+
+      .winner-process-title {
+        font-size: 1.4rem;
+        color: #94a3b8;
+        margin-bottom: 2rem;
+      }
+
+      .completed-paragraph-card {
+        background: #0f172a;
+        border: 2px solid #38bdf8;
+        border-radius: 16px;
+        padding: 1.75rem 2rem;
+        text-align: left;
+        font-size: 1.35rem;
+        line-height: 1.7;
+        margin-bottom: 2.2rem;
+        box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+      }
+
+      .completed-paragraph-card p {
+        user-select: text;
+      }
+
+      .all-teams-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.25rem;
+        text-align: left;
+        margin-bottom: 2rem;
+      }
+
+      .team-summary-box {
+        background: #0f172a;
+        border: 2px solid #334155;
+        border-radius: 14px;
+        padding: 1.25rem;
+      }
+
+      .end-screen-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      /* Modals */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(4px);
+        z-index: 100;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+      }
+
+      .modal-overlay.active {
+        display: flex;
+      }
+
+      .modal-content {
+        background: #1e293b;
+        border: 2px solid #475569;
+        border-radius: 18px;
+        max-width: 680px;
+        width: 100%;
+        padding: 2.2rem;
+        position: relative;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+
+      .modal-content h3 {
+        font-size: 1.6rem;
+        margin-bottom: 1rem;
+        color: #38bdf8;
+      }
+
+      .modal-close-btn {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: #334155;
+        border: none;
+        color: white;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        cursor: pointer;
+      }
+
+      /* Canvas Confetti */
+      #confetti-canvas {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 99;
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 900px) {
+        .home-hero h2 {
+          font-size: 2.2rem;
+        }
+        .columns-container {
+          grid-template-columns: 1fr;
+        }
+        .header-title-group h1 {
+          font-size: 1.2rem;
+        }
+        .dock-submit-btn {
+          min-width: 120px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Top Header Navigation -->
+    <header class="top-bar">
+      <div id="navHomeLink" class="header-title-group" title="Back to Home Screen">
+        <h1>⚙️ Build the Process</h1>
+        <span class="header-badge">Grade 10 English</span>
+      </div>
+      <div class="top-metrics">
+        <button id="navHomeBtn" class="btn btn-secondary btn-sm" title="Go to Home Screen">🏠 Home</button>
+        <button id="navRulesBtn" class="btn btn-secondary btn-sm" title="View Relay Rules">📖 Rules</button>
+        <button id="soundToggleBtn" class="btn btn-secondary btn-sm" aria-label="Toggle Sound">🔊 Sound On</button>
+        <button id="fullscreenToggleBtn" class="btn btn-secondary btn-sm" title="Toggle Fullscreen">⛶ Fullscreen</button>
+        <div id="gameTimer" class="timer-display">00:00</div>
+        <button id="endGameTopBtn" class="btn btn-danger btn-sm" style="display: none;">End Game</button>
+      </div>
+    </header>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- ========================================================
+         SCREEN 0: HOME SCREEN (Default Landing Page)
+         ======================================================== -->
+    <main id="homeScreen" class="screen active">
+      <section class="home-hero">
+        <div class="home-hero-content">
+          <div class="hero-pill">
+            <span>✨ Interactive Classroom Relay</span>
+            <span>·</span>
+            <span>Smartboard Ready</span>
+          </div>
+          <h2>Master Process Writing Step-by-Step</h2>
+          <p>
+            An interactive team relay game designed for Grade 10 English. Teams compete head-to-head on the smartboard to craft logical, well-structured 6-step manufacturing paragraphs while mastering sequencing words, passive voice verbs, and stylistic nominalization.
+          </p>
+          <div class="hero-action-row">
+            <button type="button" id="homeStartBtn" class="btn btn-primary btn-lg">
+              🚀 Start Relay Game
+            </button>
+            <button type="button" id="homeQuickSetupBtn" class="btn btn-secondary btn-lg">
+              ⚙️ Team Setup
+            </button>
+            <button type="button" id="homeGuideBtn" class="btn btn-emerald btn-lg">
+              💡 How to Play
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Educational Core Pillars -->
+      <h3 class="features-section-title">🎯 What Students Practice</h3>
+      <div class="home-grid">
+        <div class="feature-card">
+          <div class="feature-icon-box" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;">
+            🔄
+          </div>
+          <h3>Sequencing Transitions</h3>
+          <p>
+            Students practice transitional signposts (<em>First, Then, Next, After that, Subsequently, Finally</em>). The system automatically enforces chronological variety and penalizes repeated words.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">
+            ⚙️
+          </div>
+          <h3>Passive Voice Precision</h3>
+          <p>
+            Industrial and scientific processes require objective passive voice (<strong>Subject + is/are + Past Participle</strong>: <em>is harvested, are roasted, is molded</em>). The validation engine checks verb forms in real time.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-box" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">
+            ✍️
+          </div>
+          <h3>Nominalization &amp; Agent Variety</h3>
+          <p>
+            To achieve Grade 10 stylistic variety, teams must include at least one active agent (<em>"Workers sort..."</em>) or nominalized action noun (<em>"After harvesting, the beans..."</em>).
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-box" style="background: rgba(168, 85, 247, 0.15); color: #c084fc;">
+            🏃
+          </div>
+          <h3>Touch-Friendly Smartboard Relay</h3>
+          <p>
+            Designed for 2 to 4 teams. Students rotate up to the screen one by one to add their step. High-contrast typography, big tap targets, and Web Audio sound effects keep the classroom engaged.
+          </p>
+        </div>
+      </div>
+
+      <!-- Interactive Topic Preview Section -->
+      <section class="topic-preview-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 0.5rem;">
+          <div>
+            <h3 style="font-size: 1.35rem; font-weight: 800; color: white;">📦 Explore the 6 Manufacturing Processes</h3>
+            <p style="font-size: 0.95rem; color: #94a3b8;">Click any topic below to view example passive voice verbs and sample sentences for your lesson:</p>
+          </div>
+          <button type="button" id="topicPreviewPlayBtn" class="btn btn-primary btn-sm">Play with this Topic ➡️</button>
+        </div>
+
+        <div id="topicTabsRow" class="topics-selector-row">
+          <!-- Populated by JS -->
+        </div>
+
+        <div id="topicDetailDisplay" class="topic-detail-card">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- Quick Teacher Tips Banner -->
+      <section class="rules-banner">
+        <div>
+          <h4 style="font-size: 1.15rem; font-weight: 800; color: #f8fafc; margin-bottom: 0.3rem;">📋 Quick Classroom Teacher Tip</h4>
+          <p style="font-size: 0.95rem; color: #94a3b8; max-width: 800px;">
+            Divide the class into 2 to 4 squads. Have each squad appoint a scribe to step up to the smartboard on their turn, or rotate through all team members. Use the "Hints &amp; Formulas" drawer if students need sentence starters!
+          </p>
+        </div>
+        <button type="button" id="bannerStartBtn" class="btn btn-primary">
+          Start Game Now ⚡
+        </button>
+      </section>
+    </main>
+
+    <!-- ========================================================
+         SCREEN 1: SETUP
+         ======================================================== -->
+    <main id="setupScreen" class="screen">
+      <div class="setup-container">
+        <div class="setup-top-nav">
+          <button type="button" id="setupBackHomeBtn" class="btn btn-secondary btn-sm">← Back to Home</button>
+          <span style="font-weight: 800; color: #38bdf8; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.05em;">Step 1: Configure Match</span>
+        </div>
+
+        <div class="setup-hero">
+          <h2>Team Relay Challenge</h2>
+          <p>Assign topics, configure team names, and prepare your classroom relay.</p>
+        </div>
+
+        <div class="rules-card">
+          <h3>Relay Rules Summary</h3>
+          <ul class="rules-list">
+            <li><span>1.</span> Must start or include a sequencing word (First, Then, Next, After that, Finally...).</li>
+            <li><span>2.</span> Mostly passive voice (is/are + past participle: "is harvested", "are roasted").</li>
+            <li><span>3.</span> At least ONE step per team must be active/nominalized ("Workers sort..." or "After drying...").</li>
+            <li><span>4.</span> No repeated sequencing words within the team's paragraph.</li>
+            <li><span>5.</span> Each step must be at least 5 words long. First to 6 valid steps wins!</li>
+          </ul>
+        </div>
+
+        <div class="team-count-picker">
+          <div>
+            <strong style="font-size: 1.1rem;">Number of Teams:</strong>
+            <span id="teamCountLabel" style="color: #38bdf8; font-weight: 800; margin-left: 0.5rem; font-size: 1.2rem;">3 Teams</span>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button type="button" id="btnTeams2" class="btn btn-secondary btn-sm">2 Teams</button>
+            <button type="button" id="btnTeams3" class="btn btn-primary btn-sm">3 Teams</button>
+            <button type="button" id="btnTeams4" class="btn btn-secondary btn-sm">4 Teams</button>
+          </div>
+        </div>
+
+        <div id="teamConfigsGrid" class="team-cards-grid">
+          <!-- Populated by JS -->
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; flex-wrap: wrap; gap: 1rem;">
+          <button type="button" id="randomizeTopicsBtn" class="btn btn-secondary">🎲 Randomize Topics</button>
+          <button type="button" id="startGameBtn" class="btn btn-primary" style="font-size: 1.3rem; padding: 0.9rem 2.2rem;">🚀 Start Relay Game</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- ========================================================
+         SCREEN 2: GAME BOARD
+         ======================================================== -->
+    <main id="gameScreen" class="screen">
+      <div class="game-board">
+        <div id="teamColumnsContainer" class="columns-container">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Input & Control Dock -->
+        <section class="bottom-dock">
+          <div class="dock-turn-header">
+            <div id="dockTurnBanner" class="turn-callout">
+              <!-- e.g. "Team 1's Turn: How Coffee Is Made" -->
+            </div>
+            <div class="dock-actions">
+              <button type="button" id="hintBtn" class="btn btn-secondary btn-sm">💡 Hints &amp; Formulas</button>
+              <button type="button" id="skipTurnBtn" class="btn btn-secondary btn-sm" style="color: #fca5a5;">⏭️ Skip Turn</button>
+            </div>
+          </div>
+
+          <div class="input-wrapper">
+            <textarea
+              id="stepInput"
+              placeholder="Student types their step here... (e.g. Next, the ripe coffee cherries are picked by local farmers.)"
+              rows="2"
+              autocomplete="off"
+              spellcheck="true"
+            ></textarea>
+            <button type="button" id="submitStepBtn" class="btn btn-primary dock-submit-btn">Submit Step</button>
+          </div>
+
+          <!-- Quick Sequencing helpers for touch screen -->
+          <div class="quick-chips-row">
+            <span class="chip-label">Quick Transitions:</span>
+            <button type="button" class="word-chip" data-word="First, ">First</button>
+            <button type="button" class="word-chip" data-word="Then, ">Then</button>
+            <button type="button" class="word-chip" data-word="Next, ">Next</button>
+            <button type="button" class="word-chip" data-word="After that, ">After that</button>
+            <button type="button" class="word-chip" data-word="Subsequently, ">Subsequently</button>
+            <button type="button" class="word-chip" data-word="Following this, ">Following this</button>
+            <button type="button" class="word-chip" data-word="Meanwhile, ">Meanwhile</button>
+            <button type="button" class="word-chip" data-word="Finally, ">Finally</button>
+          </div>
+
+          <div id="validationFeedback" class="feedback-box"></div>
+        </section>
+      </div>
+    </main>
+
+    <!-- ========================================================
+         SCREEN 3: WINNER / END SCREEN
+         ======================================================== -->
+    <main id="winnerScreen" class="screen">
+      <div class="winner-container">
+        <div class="trophy-icon">🏆</div>
+        <h2 id="winnerTitle" class="winner-headline">Team 1 Wins!</h2>
+        <div id="winnerProcessTitle" class="winner-process-title">Process: How Coffee Is Made</div>
+
+        <div class="completed-paragraph-card">
+          <div style="font-size: 0.85rem; color: #38bdf8; text-transform: uppercase; font-weight: 800; margin-bottom: 0.5rem; letter-spacing: 0.05em;">
+            Completed Process Paragraph
+          </div>
+          <p id="winnerParagraphText"></p>
+        </div>
+
+        <div id="allTeamsReviewArea" style="display: none; margin-bottom: 2rem;">
+          <h3 style="font-size: 1.4rem; color: #94a3b8; margin-bottom: 1rem; text-align: left;">All Teams' Progress</h3>
+          <div id="allTeamsReviewGrid" class="all-teams-grid"></div>
+        </div>
+
+        <div class="end-screen-buttons">
+          <button type="button" id="reviewAllBtn" class="btn btn-secondary">📋 Review All Teams</button>
+          <button type="button" id="playAgainBtn" class="btn btn-primary">🔄 Play Again</button>
+          <button type="button" id="winnerHomeBtn" class="btn btn-secondary">🏠 Back to Home</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- ========================================================
+         MODAL: HINTS & FORMULAS / HOW TO PLAY
+         ======================================================== -->
+    <div id="hintModal" class="modal-overlay">
+      <div class="modal-content">
+        <button type="button" id="closeHintModalBtn" class="modal-close-btn">&times;</button>
+        <h3>💡 Writing Hints &amp; Formulas</h3>
+
+        <div style="margin-bottom: 1.25rem;">
+          <strong style="color: #38bdf8; display: block; margin-bottom: 0.3rem;">1. Sequencing Words (Transitions)</strong>
+          <p style="font-size: 0.95rem; color: #cbd5e1; line-height: 1.4;">
+            First, Then, Next, After that, Subsequently, Following this, Meanwhile, In the next stage, Lastly, Finally.
+            <em>(Remember: Do not repeat a transition your team already used!)</em>
+          </p>
+        </div>
+
+        <div style="margin-bottom: 1.25rem;">
+          <strong style="color: #38bdf8; display: block; margin-bottom: 0.3rem;">2. Passive Voice Formula</strong>
+          <p style="font-size: 0.95rem; color: #cbd5e1; line-height: 1.4;">
+            <strong>Subject + is / are + Past Participle</strong><br />
+            • <em>"The ripe berries <u>are harvested</u>..."</em><br />
+            • <em>"The dough <u>is baked</u> at 200°C..."</em><br />
+            • <em>"The liquid glass <u>is cooled</u> rapidly..."</em>
+          </p>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <strong style="color: #fbbf24; display: block; margin-bottom: 0.3rem;">3. Active or Nominalized Step (Need at least 1!)</strong>
+          <p style="font-size: 0.95rem; color: #cbd5e1; line-height: 1.4;">
+            • <strong>Active with Agent:</strong> <em>"Workers inspect each batch by hand..."</em> or <em>"The machine crushes the raw beans..."</em><br />
+            • <strong>Nominalized (-ing action noun):</strong> <em>"After <u>harvesting</u>, the beans..."</em> or <em>"During the <u>drying</u> phase, moisture evaporates..."</em>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN JAVASCRIPT GAME ENGINE -->
+    <script>
+      /* --- GAME CONFIGURATION & STATE --- */
+      const AVAILABLE_PROCESSES = [
+        {
+          id: 'coffee',
+          name: 'How Coffee Is Made',
+          icon: '☕',
+          summary: 'From harvesting red coffee cherries to washing, fermenting, drying, roasting, grinding, and brewing aromatic coffee.',
+          keyVerbs: 'harvested, picked, washed, fermented, dried, roasted, ground, packaged',
+          samplePassive: 'Next, the green coffee beans are roasted at high temperatures until they turn rich brown.',
+          sampleNominal: 'After harvesting, workers spread the cherries on raised drying beds.'
+        },
+        {
+          id: 'glass',
+          name: 'How Glass Is Made',
+          icon: '🥛',
+          summary: 'Silica sand, soda ash, and limestone are mixed, melted in an extreme furnace, shaped by blowing or floating, and annealed.',
+          keyVerbs: 'mixed, melted, heated, poured, blown, molded, cooled, annealed, cut',
+          samplePassive: 'First, raw silica sand and soda ash are melted together at over 1500°C.',
+          sampleNominal: 'During the cooling process, specialized technicians inspect the sheets for bubbles.'
+        },
+        {
+          id: 'tshirts',
+          name: 'How T-Shirts Are Made',
+          icon: '👕',
+          summary: 'Raw cotton fibers are harvested, carded, spun into yarn, woven into fabric, dyed, cut into panels, and sewn.',
+          keyVerbs: 'harvested, spun, woven, knitted, bleached, dyed, cut, sewn, printed, packaged',
+          samplePassive: 'Subsequently, the colored fabric is cut into precise pattern panels by laser cutters.',
+          sampleNominal: 'Factory workers sew the sleeves and collar together using industrial stitching machines.'
+        },
+        {
+          id: 'bread',
+          name: 'How Bread Is Made',
+          icon: '🍞',
+          summary: 'Flour, water, and yeast are combined, kneaded into dough, proofed to rise, shaped, baked in an oven, and sliced.',
+          keyVerbs: 'mixed, kneaded, proofed, shaped, fermented, baked, cooled, sliced, wrapped',
+          samplePassive: 'Then, the kneaded dough is left in a warm room so it is proofed by rising yeast.',
+          sampleNominal: 'After proofing, skilled bakers score the surface before sliding the loaves into the oven.'
+        },
+        {
+          id: 'paper',
+          name: 'How Paper Is Made',
+          icon: '📜',
+          summary: 'Wood logs are debarked, chipped, cooked into pulp, bleached, sprayed onto conveyor mesh, pressed, and dried on heated rollers.',
+          keyVerbs: 'debarked, chipped, pulped, cooked, bleached, drained, pressed, rolled, dried',
+          samplePassive: 'Following this, the wet wood pulp is pressed through heated rollers to squeeze out water.',
+          sampleNominal: 'Huge industrial machines flatten the pulp fibers into long, continuous paper rolls.'
+        },
+        {
+          id: 'chocolate',
+          name: 'How Chocolate Is Made',
+          icon: '🍫',
+          summary: 'Cacao pods are picked, seeds fermented, dried in the sun, roasted, winnowed into nibs, ground, conched, and tempered.',
+          keyVerbs: 'harvested, fermented, dried, roasted, winnowed, ground, conched, tempered, molded',
+          samplePassive: 'Finally, the tempered chocolate liquor is poured into molds and chilled into solid bars.',
+          sampleNominal: 'During fermentation, tropical farmers cover the cacao beans with banana leaves for several days.'
+        }
+      ];
+
+      const TEAM_THEMES = [
+        { name: 'Team 1', colorName: 'Blue', color: '#3b82f6' },
+        { name: 'Team 2', colorName: 'Orange', color: '#f97316' },
+        { name: 'Team 3', colorName: 'Green', color: '#10b981' },
+        { name: 'Team 4', colorName: 'Purple', color: '#a855f7' }
+      ];
+
+      // Recognized sequencing words/phrases
+      const SEQUENCING_WORDS = [
+        'first', 'firstly', 'to begin with', 'in the first stage', 'at first',
+        'initially', 'then', 'next', 'after that', 'afterwards', 'afterward',
+        'subsequently', 'following this', 'following that', 'later', 'meanwhile',
+        'simultaneously', 'in the next stage', 'in the following step', 'lastly',
+        'finally', 'in the final stage', 'at last', 'eventually'
+      ];
+
+      // Irregular past participles common in manufacturing processes
+      const IRREGULAR_PARTICIPLES = new Set([
+        'made', 'cut', 'grown', 'built', 'written', 'broken', 'dried',
+        'spun', 'woven', 'dyed', 'sewn', 'packaged', 'roasted', 'fermented',
+        'ground', 'picked', 'mixed', 'baked', 'heated', 'melted', 'blown',
+        'shaped', 'cooled', 'crushed', 'pressed', 'printed', 'rolled',
+        'refined', 'poured', 'wrapped', 'washed', 'sorted', 'loaded',
+        'shipped', 'separated', 'collected', 'treated', 'flattened',
+        'grounded', 'pulped', 'bleached', 'conched', 'kneaded', 'sliced',
+        'molded', 'tempered', 'winnowed'
+      ]);
+
+      // Active agents and nominalization keywords
+      const ACTIVE_AGENTS = [
+        'workers', 'farmers', 'artisans', 'bakers', 'operators', 'people',
+        'technicians', 'the machine', 'machines', 'specialists', 'laborers',
+        'staff', 'the factory', 'producers', 'harvesters', 'inspectors'
+      ];
+
+      const NOMINALIZED_KEYWORDS = [
+        'harvesting', 'drying', 'fermentation', 'roasting', 'grinding',
+        'spinning', 'weaving', 'dyeing', 'baking', 'kneading', 'cooling',
+        'melting', 'refining', 'packaging', 'crushing', 'pulping', 'bleaching',
+        'sorting', 'cleaning', 'processing', 'production', 'collection',
+        'proofing', 'tempering', 'conching', 'winnowing'
+      ];
+
+      let selectedPreviewTopicId = 'coffee';
+
+      let gameState = {
+        teamCount: 3,
+        teams: [],
+        currentTurnIndex: 0,
+        timerSeconds: 0,
+        timerInterval: null,
+        soundEnabled: true,
+        isGameOver: false
+      };
+
+      /* --- WEB AUDIO SOUND EFFECTS --- */
+      let audioCtx = null;
+      function playTone(freq, type = 'sine', duration = 0.15, delay = 0) {
+        if (!gameState.soundEnabled) return;
+        try {
+          if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          }
+          if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+          }
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
+          gain.gain.setValueAtTime(0.2, audioCtx.currentTime + delay);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + duration);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(audioCtx.currentTime + delay);
+          osc.stop(audioCtx.currentTime + delay + duration);
+        } catch (e) {
+          // Audio not permitted or supported
+        }
+      }
+
+      function playSuccessSound() {
+        playTone(523.25, 'triangle', 0.12, 0);       // C5
+        playTone(659.25, 'triangle', 0.15, 0.08);    // E5
+        playTone(783.99, 'triangle', 0.25, 0.16);    // G5
+      }
+
+      function playErrorSound() {
+        playTone(220, 'sawtooth', 0.18, 0);
+        playTone(185, 'sawtooth', 0.25, 0.12);
+      }
+
+      function playVictorySound() {
+        playTone(523.25, 'triangle', 0.15, 0);
+        playTone(659.25, 'triangle', 0.15, 0.12);
+        playTone(783.99, 'triangle', 0.15, 0.24);
+        playTone(1046.50, 'triangle', 0.45, 0.36);
+      }
+
+      /* --- HOME SCREEN INTERACTIVE TOPIC PREVIEWS --- */
+      function renderHomeTopicPreview() {
+        const tabsRow = document.getElementById('topicTabsRow');
+        tabsRow.innerHTML = '';
+
+        AVAILABLE_PROCESSES.forEach(proc => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = `topic-tab-btn ${proc.id === selectedPreviewTopicId ? 'active' : ''}`;
+          btn.innerHTML = `<span>${proc.icon}</span> <span>${proc.name.replace('How ', '').replace(' Is Made', '')}</span>`;
+          btn.addEventListener('click', () => {
+            selectedPreviewTopicId = proc.id;
+            renderHomeTopicPreview();
+          });
+          tabsRow.appendChild(btn);
+        });
+
+        const activeProc = AVAILABLE_PROCESSES.find(p => p.id === selectedPreviewTopicId) || AVAILABLE_PROCESSES[0];
+        const detailCard = document.getElementById('topicDetailDisplay');
+        detailCard.innerHTML = `
+          <div>
+            <div style="font-size: 1.4rem; font-weight: 800; color: white; margin-bottom: 0.4rem;">
+              ${activeProc.icon} ${activeProc.name}
+            </div>
+            <p style="margin-bottom: 0.8rem; color: #94a3b8;">${activeProc.summary}</p>
+            <div class="topic-detail-block">
+              <h4>Key Process Participles:</h4>
+              <p style="font-family: monospace; color: #38bdf8; background: #0f172a; padding: 0.4rem 0.75rem; border-radius: 6px;">
+                ${activeProc.keyVerbs}
+              </p>
+            </div>
+          </div>
+          <div>
+            <div class="topic-detail-block" style="margin-bottom: 0.9rem;">
+              <h4>Passive Voice Example (is/are + participle):</h4>
+              <p style="border-left: 3px solid #38bdf8; padding-left: 0.6rem;">"${activeProc.samplePassive}"</p>
+            </div>
+            <div class="topic-detail-block">
+              <h4>Active / Nominalized Example:</h4>
+              <p style="border-left: 3px solid #fbbf24; padding-left: 0.6rem;">"${activeProc.sampleNominal}"</p>
+            </div>
+          </div>
+        `;
+      }
+
+      /* --- SETUP SCREEN LOGIC --- */
+      function renderSetup() {
+        const grid = document.getElementById('teamConfigsGrid');
+        grid.innerHTML = '';
+        for (let i = 0; i < gameState.teamCount; i++) {
+          const defaultName = `Team ${i + 1}`;
+          const defaultProcess = AVAILABLE_PROCESSES[i % AVAILABLE_PROCESSES.length].name;
+          const card = document.createElement('div');
+          card.className = `team-config-card team-${i}`;
+          card.innerHTML = `
+            <div style="margin-bottom: 0.8rem;">
+              <label class="input-label" for="team-name-${i}">Team ${i + 1} Name</label>
+              <input type="text" id="team-name-${i}" value="${defaultName}" maxlength="20" />
+            </div>
+            <div>
+              <label class="input-label" for="team-topic-${i}">Assigned Process</label>
+              <select id="team-topic-${i}">
+                ${AVAILABLE_PROCESSES.map(p => `
+                  <option value="${p.name}" ${p.name === defaultProcess ? 'selected' : ''}>
+                    ${p.icon} ${p.name}
+                  </option>
+                `).join('')}
+              </select>
+            </div>
+          `;
+          grid.appendChild(card);
+        }
+        document.getElementById('teamCountLabel').textContent = `${gameState.teamCount} Teams`;
+      }
+
+      function setTeamCount(count) {
+        gameState.teamCount = count;
+        [2, 3, 4].forEach(n => {
+          const btn = document.getElementById(`btnTeams${n}`);
+          if (n === count) {
+            btn.className = 'btn btn-primary btn-sm';
+          } else {
+            btn.className = 'btn btn-secondary btn-sm';
+          }
+        });
+        renderSetup();
+      }
+
+      function randomizeTopics() {
+        const shuffled = [...AVAILABLE_PROCESSES].sort(() => 0.5 - Math.random());
+        for (let i = 0; i < gameState.teamCount; i++) {
+          const sel = document.getElementById(`team-topic-${i}`);
+          if (sel) {
+            sel.value = shuffled[i % shuffled.length].name;
+          }
+        }
+      }
+
+      /* --- GAME INITIALIZATION --- */
+      function startGame() {
+        gameState.teams = [];
+        for (let i = 0; i < gameState.teamCount; i++) {
+          const nameInput = document.getElementById(`team-name-${i}`);
+          const topicSelect = document.getElementById(`team-topic-${i}`);
+          const selectedName = topicSelect ? topicSelect.value : AVAILABLE_PROCESSES[i % AVAILABLE_PROCESSES.length].name;
+          const topicObj = AVAILABLE_PROCESSES.find(p => p.name === selectedName) || AVAILABLE_PROCESSES[0];
+
+          gameState.teams.push({
+            id: i,
+            name: (nameInput && nameInput.value.trim()) || `Team ${i + 1}`,
+            process: topicObj.name,
+            icon: topicObj.icon,
+            steps: [],
+            usedSeqWords: new Set(),
+            hasActiveStep: false
+          });
+        }
+
+        gameState.currentTurnIndex = 0;
+        gameState.isGameOver = false;
+        gameState.timerSeconds = 0;
+
+        // Switch to Game Screen
+        showScreen('gameScreen');
+        document.getElementById('gameTimer').style.display = 'block';
+        document.getElementById('endGameTopBtn').style.display = 'inline-flex';
+
+        // Start Timer
+        if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+        gameState.timerInterval = setInterval(() => {
+          gameState.timerSeconds++;
+          const m = String(Math.floor(gameState.timerSeconds / 60)).padStart(2, '0');
+          const s = String(gameState.timerSeconds % 60).padStart(2, '0');
+          document.getElementById('gameTimer').textContent = `${m}:${s}`;
+        }, 1000);
+
+        renderGameBoard();
+        focusInput();
+      }
+
+      /* --- GAME BOARD RENDERING --- */
+      function renderGameBoard() {
+        const container = document.getElementById('teamColumnsContainer');
+        container.innerHTML = '';
+
+        gameState.teams.forEach((team, index) => {
+          const isTurn = index === gameState.currentTurnIndex;
+          const col = document.createElement('div');
+          col.className = `team-column team-${index} ${isTurn ? 'active-turn' : ''}`;
+
+          // Header
+          const header = document.createElement('div');
+          header.className = 'team-column-header';
+          header.innerHTML = `
+            <div class="team-name-badge">
+              <span class="team-title" style="color: ${TEAM_THEMES[index].color}">${team.name}</span>
+              <span class="turn-tag">${isTurn ? '👉 Current Turn' : `Step ${team.steps.length}/6`}</span>
+            </div>
+            <div class="process-topic-badge">
+              <span>${team.icon}</span> <span>${team.process}</span>
+            </div>
+            <div class="steps-progress">
+              <div class="progress-bars-row">
+                ${[0, 1, 2, 3, 4, 5].map(stepIdx => `
+                  <div class="step-dot ${stepIdx < team.steps.length ? 'filled' : ''}"></div>
+                `).join('')}
+              </div>
+            </div>
+            <div class="requirements-indicator">
+              <span>Active/Nominal: ${team.hasActiveStep ? '✅ Met' : '⏳ Needed'}</span>
+              <span>${team.steps.length} of 6 steps</span>
+            </div>
+          `;
+          col.appendChild(header);
+
+          // Steps list
+          const stepsArea = document.createElement('div');
+          stepsArea.className = 'steps-scroll-area';
+
+          if (team.steps.length === 0) {
+            stepsArea.innerHTML = `<div class="empty-steps-prompt">No steps added yet.<br>Waiting for first relay turn!</div>`;
+          } else {
+            team.steps.forEach((step, sIdx) => {
+              const stepBox = document.createElement('div');
+              stepBox.className = 'step-item';
+              stepBox.innerHTML = `
+                <div class="step-item-meta">
+                  <span>Step ${sIdx + 1}</span>
+                  <span class="voice-tag ${step.voiceType === 'active' ? 'voice-active' : 'voice-passive'}">
+                    ${step.voiceType === 'active' ? 'Active / Nominalized' : 'Passive Voice'}
+                  </span>
+                </div>
+                <div>${formatStepHTML(step.text, step.seqWord)}</div>
+              `;
+              stepsArea.appendChild(stepBox);
+            });
+          }
+          col.appendChild(stepsArea);
+          container.appendChild(col);
+        });
+
+        // Update bottom dock turn banner
+        const activeTeam = gameState.teams[gameState.currentTurnIndex];
+        const dockBanner = document.getElementById('dockTurnBanner');
+        dockBanner.innerHTML = `
+          <span style="color: ${TEAM_THEMES[activeTeam.id].color}">${activeTeam.name}'s Turn</span>
+          <span style="font-size: 1rem; color: #94a3b8;">(${activeTeam.icon} ${activeTeam.process})</span>
+        `;
+      }
+
+      function formatStepHTML(text, seqWord) {
+        if (!seqWord) return escapeHTML(text);
+        const regex = new RegExp(`(^|\\b)(${escapeRegex(seqWord)})(\\b|,)`, 'i');
+        return escapeHTML(text).replace(regex, `<span class="step-seq-word">$1$2$3</span>`);
+      }
+
+      function escapeHTML(str) {
+        return str.replace(/[&<>'"]/g, tag => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+        }[tag] || tag));
+      }
+
+      function escapeRegex(string) {
+        return string.replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&');
+      }
+
+      function focusInput() {
+        const input = document.getElementById('stepInput');
+        input.value = '';
+        input.focus();
+        clearFeedback();
+      }
+
+      /* --- RULE VALIDATION ENGINE --- */
+      function validateStep(text, team) {
+        const clean = text.trim();
+        const words = clean.split(/\s+/).filter(Boolean);
+
+        // Rule 5: Length check (at least 5 words)
+        if (words.length < 5) {
+          return {
+            valid: false,
+            message: `❌ Step is too short (${words.length} words). Grade 10 steps must be at least 5 words long.`
+          };
+        }
+
+        // Rule 1: Find sequencing word
+        const lower = clean.toLowerCase();
+        let matchedSeqWord = null;
+
+        // Check longest matches first so "after that" matches before "after"
+        const sortedSeq = [...SEQUENCING_WORDS].sort((a, b) => b.length - a.length);
+        for (const seq of sortedSeq) {
+          const regex = new RegExp(`(^|\\b)${escapeRegex(seq)}(\\b|,)`, 'i');
+          if (regex.test(lower)) {
+            matchedSeqWord = seq;
+            break;
+          }
+        }
+
+        if (!matchedSeqWord) {
+          return {
+            valid: false,
+            message: `❌ Missing a sequencing word. Begin or include a transition: "First", "Then", "Next", "After that", "Subsequently", "Finally".`
+          };
+        }
+
+        // Rule 4: No repeated sequencing word within the same team
+        if (team.usedSeqWords.has(matchedSeqWord)) {
+          return {
+            valid: false,
+            message: `❌ Repeated transition! ${team.name} already used "${matchedSeqWord}". Try a different sequencing word.`
+          };
+        }
+
+        // Rule 2 & 3: Voice detection (Passive vs Active/Nominalized)
+        const isPassive = checkPassiveVoice(clean);
+        const isActiveNominal = checkActiveOrNominalized(clean);
+
+        // If team is on Step 6 (their final step) and has NOT yet included an active/nominalized step, require it!
+        if (team.steps.length === 5 && !team.hasActiveStep && !isActiveNominal) {
+          return {
+            valid: false,
+            message: `❌ Final step requirement: Your team needs at least one active or nominalized step (e.g. "Workers harvest the crops..." or "After cooling, the chocolate...").`
+          };
+        }
+
+        // If it's neither valid passive nor active/nominalized
+        if (!isPassive && !isActiveNominal) {
+          return {
+            valid: false,
+            message: `❌ Voice check failed. Use passive voice (e.g., "is/are harvested", "is heated", "are woven") or active/nominalized (e.g., "Workers grind the beans..." or "After drying...").`
+          };
+        }
+
+        const voiceType = isActiveNominal ? 'active' : 'passive';
+
+        return {
+          valid: true,
+          seqWord: matchedSeqWord,
+          voiceType: voiceType,
+          message: `✅ Step accepted! (${voiceType === 'active' ? 'Active / Nominalized' : 'Passive Voice'})`
+        };
+      }
+
+      function checkPassiveVoice(text) {
+        const lower = text.toLowerCase();
+        const tokens = lower.replace(/[^\w\s]/g, ' ').split(/\s+/);
+        for (let i = 0; i < tokens.length - 1; i++) {
+          const t = tokens[i];
+          if (t === 'is' || t === 'are' || t === 'being' || t === 'been' || t === 'be') {
+            for (let j = i + 1; j <= Math.min(i + 3, tokens.length - 1); j++) {
+              const candidate = tokens[j];
+              if (candidate.endsWith('ed') || candidate.endsWith('en') || IRREGULAR_PARTICIPLES.has(candidate)) {
+                return true;
+              }
+            }
+          }
+        }
+        return false;
+      }
+
+      function checkActiveOrNominalized(text) {
+        const lower = text.toLowerCase();
+        for (const agent of ACTIVE_AGENTS) {
+          if (lower.includes(agent)) return true;
+        }
+        for (const nom of NOMINALIZED_KEYWORDS) {
+          if (lower.includes(nom)) return true;
+        }
+        return false;
+      }
+
+      /* --- STEP SUBMISSION --- */
+      function submitStep() {
+        if (gameState.isGameOver) return;
+
+        const input = document.getElementById('stepInput');
+        const text = input.value.trim();
+        const activeTeam = gameState.teams[gameState.currentTurnIndex];
+
+        if (!text) {
+          showFeedback('error', '⚠️ Please enter a step description before submitting.');
+          playErrorSound();
+          return;
+        }
+
+        const result = validateStep(text, activeTeam);
+
+        if (!result.valid) {
+          showFeedback('error', result.message);
+          playErrorSound();
+          return;
+        }
+
+        // Passed validation!
+        playSuccessSound();
+        showFeedback('success', result.message);
+
+        // Add to team state
+        activeTeam.steps.push({
+          text: text,
+          seqWord: result.seqWord,
+          voiceType: result.voiceType
+        });
+        activeTeam.usedSeqWords.add(result.seqWord);
+        if (result.voiceType === 'active') {
+          activeTeam.hasActiveStep = true;
+        }
+
+        // Check Win Condition: 6 steps + at least 1 active/nominalized
+        if (activeTeam.steps.length >= 6 && activeTeam.hasActiveStep) {
+          triggerWinner(activeTeam);
+          return;
+        }
+
+        // Advance to next team
+        gameState.currentTurnIndex = (gameState.currentTurnIndex + 1) % gameState.teams.length;
+        renderGameBoard();
+        setTimeout(() => {
+          focusInput();
+        }, 300);
+      }
+
+      function skipTurn() {
+        const activeTeam = gameState.teams[gameState.currentTurnIndex];
+        showFeedback('error', `⏭️ ${activeTeam.name} skipped their turn! Moving to next team.`);
+        playTone(300, 'sine', 0.2);
+
+        gameState.currentTurnIndex = (gameState.currentTurnIndex + 1) % gameState.teams.length;
+        renderGameBoard();
+        focusInput();
+      }
+
+      function showFeedback(type, text) {
+        const box = document.getElementById('validationFeedback');
+        box.className = `feedback-box ${type}`;
+        box.textContent = text;
+      }
+
+      function clearFeedback() {
+        const box = document.getElementById('validationFeedback');
+        box.className = 'feedback-box';
+        box.textContent = '';
+      }
+
+      /* --- WINNER & END GAME --- */
+      function triggerWinner(team) {
+        gameState.isGameOver = true;
+        if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+        playVictorySound();
+        startConfetti();
+
+        document.getElementById('winnerTitle').textContent = `🏆 ${team.name} Wins!`;
+        document.getElementById('winnerTitle').style.color = TEAM_THEMES[team.id].color;
+        document.getElementById('winnerProcessTitle').textContent = `Assigned Process: ${team.process}`;
+
+        const paragraph = team.steps.map(s => s.text.trim()).join(' ');
+        document.getElementById('winnerParagraphText').textContent = paragraph;
+
+        showScreen('winnerScreen');
+      }
+
+      function endGameManually() {
+        if (!confirm('Are you sure you want to end the game and review progress?')) return;
+        gameState.isGameOver = true;
+        if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+
+        let leadingTeam = gameState.teams[0];
+        gameState.teams.forEach(t => {
+          if (t.steps.length > leadingTeam.steps.length) leadingTeam = t;
+        });
+
+        triggerWinner(leadingTeam);
+      }
+
+      function renderAllTeamsReview() {
+        const reviewGrid = document.getElementById('allTeamsReviewGrid');
+        reviewGrid.innerHTML = '';
+        gameState.teams.forEach((t, i) => {
+          const box = document.createElement('div');
+          box.className = 'team-summary-box';
+          box.style.borderColor = TEAM_THEMES[i].color;
+          const paragraph = t.steps.length > 0
+            ? t.steps.map(s => s.text.trim()).join(' ')
+            : '<em>No steps completed.</em>';
+          box.innerHTML = `
+            <div style="font-weight: 800; font-size: 1.2rem; color: ${TEAM_THEMES[i].color}; margin-bottom: 0.3rem;">
+              ${t.name} (${t.steps.length}/6 steps)
+            </div>
+            <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.6rem;">
+              ${t.icon} ${t.process} · Active step: ${t.hasActiveStep ? '✅' : '❌'}
+            </div>
+            <p style="font-size: 1rem; line-height: 1.5; color: #e2e8f0;">${paragraph}</p>
+          `;
+          reviewGrid.appendChild(box);
+        });
+        document.getElementById('allTeamsReviewArea').style.display = 'block';
+      }
+
+      /* --- SCREEN SWITCHING --- */
+      function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        const target = document.getElementById(screenId);
+        if (target) {
+          target.classList.add('active');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Top bar indicators
+        const timerEl = document.getElementById('gameTimer');
+        const endBtn = document.getElementById('endGameTopBtn');
+        if (screenId === 'gameScreen') {
+          timerEl.style.display = 'block';
+          endBtn.style.display = 'inline-flex';
+        } else {
+          timerEl.style.display = 'none';
+          endBtn.style.display = 'none';
+        }
+      }
+
+      /* --- FULLSCREEN TOGGLE --- */
+      function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else {
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+          }
+        }
+      }
+
+      /* --- CONFETTI ANIMATION (PURE JS) --- */
+      let confettiAnimationId = null;
+      function startConfetti() {
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const pieces = [];
+        const colors = ['#3b82f6', '#f97316', '#10b981', '#a855f7', '#fbbf24', '#f43f5e'];
+
+        for (let i = 0; i < 120; i++) {
+          pieces.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * -canvas.height,
+            size: Math.random() * 8 + 6,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            vx: (Math.random() - 0.5) * 3,
+            vy: Math.random() * 3 + 2,
+            rot: Math.random() * 360,
+            vRot: (Math.random() - 0.5) * 6
+          });
+        }
+
+        function loop() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          pieces.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.rot += p.vRot;
+            if (p.y > canvas.height) {
+              p.y = -20;
+              p.x = Math.random() * canvas.width;
+            }
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate((p.rot * Math.PI) / 180);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.7);
+            ctx.restore();
+          });
+          confettiAnimationId = requestAnimationFrame(loop);
+        }
+
+        if (confettiAnimationId) cancelAnimationFrame(confettiAnimationId);
+        loop();
+
+        setTimeout(() => {
+          if (confettiAnimationId) cancelAnimationFrame(confettiAnimationId);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }, 7000);
+      }
+
+      /* --- INITIALIZATION & EVENT LISTENERS --- */
+      window.addEventListener('DOMContentLoaded', () => {
+        renderHomeTopicPreview();
+        renderSetup();
+
+        // Top Navigation links
+        document.getElementById('navHomeLink').addEventListener('click', () => showScreen('homeScreen'));
+        document.getElementById('navHomeBtn').addEventListener('click', () => showScreen('homeScreen'));
+        document.getElementById('navRulesBtn').addEventListener('click', () => {
+          document.getElementById('hintModal').classList.add('active');
+        });
+        document.getElementById('fullscreenToggleBtn').addEventListener('click', toggleFullscreen);
+
+        // Home Screen Actions
+        document.getElementById('homeStartBtn').addEventListener('click', () => showScreen('setupScreen'));
+        document.getElementById('homeQuickSetupBtn').addEventListener('click', () => showScreen('setupScreen'));
+        document.getElementById('homeGuideBtn').addEventListener('click', () => {
+          document.getElementById('hintModal').classList.add('active');
+        });
+        document.getElementById('bannerStartBtn').addEventListener('click', () => showScreen('setupScreen'));
+
+        document.getElementById('topicPreviewPlayBtn').addEventListener('click', () => {
+          showScreen('setupScreen');
+          const firstTeamTopicSel = document.getElementById('team-topic-0');
+          const activeProc = AVAILABLE_PROCESSES.find(p => p.id === selectedPreviewTopicId);
+          if (firstTeamTopicSel && activeProc) {
+            firstTeamTopicSel.value = activeProc.name;
+          }
+        });
+
+        // Setup Screen Actions
+        document.getElementById('setupBackHomeBtn').addEventListener('click', () => showScreen('homeScreen'));
+        document.getElementById('btnTeams2').addEventListener('click', () => setTeamCount(2));
+        document.getElementById('btnTeams3').addEventListener('click', () => setTeamCount(3));
+        document.getElementById('btnTeams4').addEventListener('click', () => setTeamCount(4));
+        document.getElementById('randomizeTopicsBtn').addEventListener('click', randomizeTopics);
+        document.getElementById('startGameBtn').addEventListener('click', startGame);
+
+        // Game board actions
+        document.getElementById('submitStepBtn').addEventListener('click', submitStep);
+        document.getElementById('skipTurnBtn').addEventListener('click', skipTurn);
+        document.getElementById('endGameTopBtn').addEventListener('click', endGameManually);
+
+        // Enter key in textarea
+        document.getElementById('stepInput').addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            submitStep();
+          }
+        });
+
+        // Quick word chips
+        document.querySelectorAll('.word-chip').forEach(chip => {
+          chip.addEventListener('click', () => {
+            const word = chip.getAttribute('data-word');
+            const input = document.getElementById('stepInput');
+            if (!input.value.trim()) {
+              input.value = word;
+            } else {
+              input.value = word + input.value;
+            }
+            input.focus();
+          });
+        });
+
+        // Sound toggle
+        const soundBtn = document.getElementById('soundToggleBtn');
+        soundBtn.addEventListener('click', () => {
+          gameState.soundEnabled = !gameState.soundEnabled;
+          soundBtn.textContent = gameState.soundEnabled ? '🔊 Sound On' : '🔇 Muted';
+          soundBtn.style.color = gameState.soundEnabled ? '#f8fafc' : '#94a3b8';
+        });
+
+        // Modals
+        const hintModal = document.getElementById('hintModal');
+        document.getElementById('hintBtn').addEventListener('click', () => hintModal.classList.add('active'));
+        document.getElementById('closeHintModalBtn').addEventListener('click', () => hintModal.classList.remove('active'));
+        hintModal.addEventListener('click', (e) => {
+          if (e.target === hintModal) hintModal.classList.remove('active');
+        });
+
+        // End screen actions
+        document.getElementById('playAgainBtn').addEventListener('click', () => {
+          if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+          showScreen('setupScreen');
+          document.getElementById('allTeamsReviewArea').style.display = 'none';
+        });
+
+        document.getElementById('winnerHomeBtn').addEventListener('click', () => {
+          if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+          showScreen('homeScreen');
+          document.getElementById('allTeamsReviewArea').style.display = 'none';
+        });
+
+        document.getElementById('reviewAllBtn').addEventListener('click', renderAllTeamsReview);
+      });
+    </script>
+  </body>
+</html>
